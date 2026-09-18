@@ -171,79 +171,277 @@
   </div>
 
   <script>
+    const LOCAL_GAMES = [
+      '1v1.lol',
+      '2048',
+      '8-ball-pool',
+      'a-dark-room',
+      'among-us-online-scratch',
+      'appel-multiplayer',
+      'appel',
+      'awesome-planes',
+      'awesome-tanks-2',
+      'awesome-tanks',
+      'basket-random',
+      'bitlife',
+      'block-blast',
+      'bob-the-robber-2',
+      'bob-the-robber-4',
+      'boxel-rebound',
+      'boxing-random',
+      'burrito-bison-launcha-libre',
+      'celeste-classic-2-lanis-trek',
+      'celeste-classic',
+      'choppy-orc-autosplitter',
+      'circloo-2',
+      'circloo',
+      'cloud-platformer-fun',
+      'color-switch',
+      'connect-4',
+      'cookie-clicker',
+      'crossy-road',
+      'cut-the-rope-time-travel',
+      'cut-the-rope',
+      'doodle-jump',
+      'doom-marines-best-friend',
+      'doom',
+      'drift-boss',
+      'drive-mad',
+      'earn-to-die-2',
+      'egg-ascent',
+      'eggy-car',
+      'emulatrix',
+      'fireboy-and-watergirl-2',
+      'fireboy-and-watergirl-3',
+      'fireboy-and-watergirl-4',
+      'fnaf-2',
+      'fnaf',
+      'friday-night-funkin',
+      'getaway-shootout',
+      'heretic',
+      'hextris',
+      'jelly-truck',
+      'johnny-upgrade',
+      'js-dos',
+      'jstetris',
+      'little-alchemy-2',
+      'madalin-stunt-cars-2',
+      'merge-melon',
+      'minecraftish-MMO',
+      'mini-golf-online',
+      'mini-metro-london',
+      'minicraft',
+      'mission-in-snowdriftland',
+      'moschess',
+      'moto-x3m-2',
+      'moto-x3m-3',
+      'moto-x3m-pool-party',
+      'moto-x3m-spooky-land',
+      'moto-x3m-winter',
+      'moto-x3m',
+      'n-gon',
+      'neverball',
+      'openttd',
+      'osu-full-remake',
+      'ovo',
+      'paper.io-2',
+      'pip!',
+      'plants-vs.-zombies-web-demo',
+      'polytrack',
+      'pong',
+      'quake-3-arena-demo',
+      'recoil',
+      'retro-bowl-college',
+      'retro-bowl',
+      'rooftop-snipers',
+      'run-3',
+      'sandtris',
+      'slither.io-online',
+      'slope',
+      'snow-rider-3d',
+      'soccer-random',
+      'spelunky-classic-hd',
+      'stack',
+      'stealing-the-diamond',
+      'stickman-hook',
+      'submersible',
+      'subway-surfers',
+      'superhot-prototype',
+      'tanuki-sunset',
+      'temple-run-2',
+      'tennis-physics',
+      'tetris/jstetris-1.20',
+      'the-final-earth-2',
+      'the-tale-of-the-adhd-dinosaur',
+      'there-is-no-game',
+      'time-shooter-2',
+      'time-shooter-3-swat',
+      'tiny-fishing',
+      'tomb-of-the-mask',
+      'tube-jumpers',
+      'tunnel-rush',
+      'vex-3',
+      'vex-4',
+      'vex-5',
+      'vex-6',
+      'vex-7',
+      'vex-8',
+      'wolfenstein-3d',
+      'yongjin-brick-breaker',
+      '60-seconds-burger-run-igt.swf',
+      '60-seconds-burger-run.swf',
+      '60-seconds-santa-run.swf',
+      'abobos-big-adventure.swf',
+      'age-of-war-2.swf',
+      'age-of-war.swf',
+      'alien-hominid.swf',
+      'army-of-ages.swf',
+      'asteroids.swf',
+      'bad-piggies.swf',
+      'bejeweled.swf',
+      'blank.swf',
+      'bloons-player-pack-2.swf',
+      'bloons-player-pack-3.swf',
+      'bloons-td-2.swf',
+      'bloons-td-3.swf',
+      'bloons-td-4.swf',
+      'bloons-td.swf',
+      'bloons-tower-defense-5.swf',
+      'bloons.swf',
+      'bloxorz.swf',
+      'bob-the-robber.swf',
+      'breaking-the-bank.swf',
+      'btd4-exp.swf',
+      'burrito-bison-revenge.swf',
+      'burrito-bison.swf',
+      'cactus-mccoy-2.swf',
+      'cactus-mccoy.swf',
+      'crazy-frog.swf',
+      'douchebag-life.swf',
+      'douchebag-workout.swf',
+      'duck-life-2.swf',
+      'duck-life-3.swf',
+      'duck-life-4.swf',
+      'duck-life.swf',
+      'escaping-the-prison.swf',
+      'fancy-snowboarding.swf',
+      'fireboy&watergirl.swf',
+      'fishy!.swf',
+      'fleeing-the-complex.swf',
+      'flood-runner-2.swf',
+      'floodrunner-4.swf',
+      'flow.swf',
+      'gluey2.swf',
+      'gravitee-2.swf',
+      'gravitee.swf',
+      'gun-mayhem-2.swf',
+      'gun-mayhem-3.swf',
+      'gun-mayhem-redux.swf',
+      'gun-mayhem.swf',
+      'hamu.swf',
+      'infiltrating-the-airship.swf',
+      'jacksmith.swf',
+      'learn-to-fly-2.swf',
+      'learn-to-fly-3.swf',
+      'learn-to-fly-idle.swf',
+      'learn-to-fly.swf',
+      'light-bot.swf',
+      'line-rider.swf',
+      'meat-boy.swf',
+      'motherload.swf',
+      'my-friend-pedro.swf',
+      'n-v2.swf',
+      'n.swf',
+      'pacman.swf',
+      'papa-louie-2.swf',
+      'papa-louie-3.swf',
+      'papa-louie-when-pizzas-attack.swf',
+      'papas-cheeseria.swf',
+      'papas-donuteria.swf',
+      'papas-freezeria.swf',
+      'papas-pancakeria.swf',
+      'papas-pizzeria.swf',
+      'papas-scooperia.swf',
+      'papas-sushiria.swf',
+      'parking-mania.swf',
+      'portal-the-flash-version.swf',
+      'powerpuff-girls-zom-b-gone.swf',
+      'prince-of-persia-special-edition.swf',
+      'qwop.swf',
+      'raft-wars-2.swf',
+      'raft-wars.swf',
+      'redball-2.swf',
+      'riddle-school-1.swf',
+      'robot-unicorn-attack.swf',
+      'rogue-soul-2.swf',
+      'rogue-soul.swf',
+      'run-2.swf',
+      'run.swf',
+      'santa-run-2.swf',
+      'santa-run-3.swf',
+      'santa-run-extrahard-version.swf',
+      'snailbob.swf',
+      'stealing-the-diamond.swf',
+      'stick-rpg.swf',
+      'super-mario-63.swf',
+      'super-mario-bros-crossover.swf',
+      'super-mario-flash.swf',
+      'super-smash-flash.swf',
+      'swords-and-sandals-2.swf',
+      'swords-and-sandals.swf',
+      'swords-and-souls.swf',
+      'tetris.swf',
+      'the-binding-of-isaac-demo.swf',
+      'the-binding-of-isaac.swf',
+      'the-fancy-pants-adventures-world-1.swf',
+      'the-fancy-pants-adventures-world-2.swf',
+      'the-fancy-pants-adventures-world-3.swf',
+      'the-fancy-pants-adventures.swf',
+      'the-impossible-quiz-2.swf',
+      'the-impossible-quiz-book.swf',
+      'the-impossible-quiz.swf',
+      'the-worlds-hardest-game-2.swf',
+      'the-worlds-hardest-game.swf',
+      'this-is-the-only-level.swf',
+      'unfair-mario.swf',
+      'vex-2.swf',
+      'vex-3.swf',
+      'vex.swf',
+      'zuma.swf'
+    ];
+
     const ICON_CANDIDATES = ['icon.png', 'icon.webp', 'icon.jpg', 'icon.svg', 'logo.png', 'app.png'];
     const FALLBACK_ICON = 'https://coltjbennett.github.io/games-hub/images/missing.png'; 
 
     let games = [];
 
-    async function fetchGames() {
+    function loadGames() {
       const grid = document.getElementById('grid');
-      grid.innerHTML = `<div class="status-container">Loading arcade library... please wait.</div>`;
-      
-      try {
-        const response = await fetch('./');
-        if (!response.ok) {
-          throw new Error('Failed to load local directory contents.');
-        }
 
-        const text = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, 'text/html');
-        const links = Array.from(doc.querySelectorAll('a'));
-
-        const seen = new Set();
-        const validItems = [];
-
-        links.forEach(link => {
-          let href = link.getAttribute('href');
-          if (!href) return;
-
-          href = href.replace(/^\.\//, '').replace(/\/$/, '');
-          const name = href.split('/')[0].split('?')[0].split('#')[0];
-
-          if (!name || name.startsWith('.') || name.toLowerCase() === 'index.html' || seen.has(name)) {
-            return;
-          }
-          seen.add(name);
-
-          const isSwf = name.toLowerCase().endsWith('.swf');
-          if (isSwf || !name.includes('.')) {
-            validItems.push({
-              name: name,
-              type: isSwf ? 'file' : 'dir'
-            });
-          }
-        });
-
-        if (validItems.length === 0) {
-          grid.innerHTML = `<div class="status-container">No games or SWF files found in repository.</div>`;
-          return;
-        }
-
-        games = validItems.map(item => {
-          const isSwf = item.type === 'file' && item.name.toLowerCase().endsWith('.swf');
-          const baseName = isSwf ? item.name.replace(/\.swf$/i, '') : item.name;
-
-          return {
-            name: item.name,
-            baseName: baseName, 
-            title: formatTitle(baseName),
-            path: isSwf 
-              ? item.name 
-              : `${item.name}/index.html`,
-            isSwf: isSwf
-          };
-        });
-
-        renderGrid(games);
-      } catch (err) {
-        grid.innerHTML = `<div class="status-container">Failed to load arcade library.</div>`;
-        console.error(err);
+      if (!LOCAL_GAMES || LOCAL_GAMES.length === 0) {
+        grid.innerHTML = `<div class="status-container">No games found in local repository.</div>`;
+        return;
       }
+
+      games = LOCAL_GAMES.map(itemName => {
+        const isSwf = itemName.toLowerCase().endsWith('.swf');
+        const baseName = isSwf ? itemName.replace(/\.swf$/i, '') : itemName;
+
+        return {
+          name: itemName,
+          baseName: baseName,
+          title: formatTitle(baseName),
+          path: isSwf ? itemName : `${itemName}/index.html`,
+          isSwf: isSwf
+        };
+      });
+
+      renderGrid(games);
     }
 
     function formatTitle(folderName) {
-      return folderName
+      const nameOnly = folderName.includes('/') ? folderName.split('/').pop() : folderName;
+      return nameOnly
         .replace(/[-_]/g, ' ')
         .replace(/\b\w/g, char => char.toUpperCase());
     }
@@ -332,7 +530,7 @@
       container.innerHTML = ''; 
     }
 
-    fetchGames();
+    loadGames();
   </script>
 </body>
 </html>
