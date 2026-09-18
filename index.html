@@ -7,7 +7,7 @@
   <title>Arcade Hub - Project Launcher</title>
   <link rel="icon" href="https://coltjbennett.github.io/games-hub/images/icon.JPG">
   <link rel="stylesheet" href="https://coltjbennett.github.io/games-hub/styles.css" />
-  
+
   <!-- Preload Ruffle Globally -->
   <script>
     window.RufflePlayer = window.RufflePlayer || {};
@@ -15,7 +15,7 @@
   <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 
   <style>
-    /* ===== DISABLE CRT OVERLAYS & FILTERS ===== */
+    /* ===== DISABLE CRT OVERLAYS & FILTERS (PRESERVES TILED BACKGROUND) ===== */
     html::after {
       display: none !important;
       content: none !important;
@@ -44,12 +44,12 @@
     .arcade-card {
       cursor: pointer;
     }
-    
+
     .arcade-card .card-image {
       aspect-ratio: 1 / 1;
       background: var(--win-bg);
       border-bottom: 2px inset var(--win-border-dark);
-      padding: 6px; 
+      padding: 6px;
     }
 
     .arcade-card .card-image img {
@@ -59,7 +59,7 @@
       border: 2px inset var(--win-border-dark);
       background: var(--win-blue);
     }
-    
+
     .arcade-card .card-body {
       align-items: center;
       justify-content: center;
@@ -70,6 +70,7 @@
       text-align: center;
       margin: 0;
       font-size: 1rem;
+      overflow-wrap: anywhere;
     }
 
     .status-container {
@@ -85,7 +86,7 @@
 <body>
 
   <div class="page-shell">
-    
+
     <!-- Header -->
     <header>
       <div class="panel-dark">
@@ -100,7 +101,7 @@
         <div class="panel-body">
           <div class="header-top-banner">GAME DIRECTORY</div>
           <h1>ARCADE HUB</h1>
-          <p class="hero-copy">Browse, search, and play games directly from the repository.</p>
+          <p class="hero-copy">Browse, search, and play games straight from your local library.</p>
         </div>
       </div>
     </header>
@@ -116,10 +117,10 @@
           </span>
         </div>
         <div class="panel-body">
-          
+
           <!-- Search Toolbar -->
           <div class="controls-row">
-            <p class="hint">Type to filter games below.</p>
+            <p class="hint">Type to filter games below. <span id="game-count"></span></p>
             <div class="toolbar">
               <input type="text" id="search" class="search-input" placeholder="Search games..." style="width: 250px;">
             </div>
@@ -133,9 +134,10 @@
         </div>
       </div>
     </main>
-    
+
     <!-- Footer -->
     <footer>
+      <p>Local Arcade Library</p>
       <p class="footer-note w95-text">Best viewed with a monitor</p>
     </footer>
 
@@ -143,8 +145,8 @@
 
   <!-- Taskbar -->
   <div class="taskbar">
-    <button type="button" class="taskbar-start" onclick="window.location.href='https://coltjbennett.github.io/games-hub/index.html'">
-      <img src="https://coltjbennett.github.io/games-hub/images/windows.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 4px;" onerror="this.src='https://coltjbennett.github.io/games-hub/images/missing.png';" />
+    <button type="button" class="taskbar-start" onclick="window.location.href='index.html'">
+      <img src="https://coltjbennett.github.io/games-hub/images/windows.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 4px;" onerror="this.onerror=null;this.src='https://coltjbennett.github.io/games-hub/images/missing.png';" />
       Start
     </button>
     <div class="taskbar-spacer"></div>
@@ -153,14 +155,14 @@
     </div>
   </div>
 
-  <!-- Unified Game Modal Window -->
+  <!-- Unified Game Modal Window (Handles Flash & HTML5) -->
   <div id="game-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
     <div class="panel" style="width: 95vw; height: 95vh; display: flex; flex-direction: column; padding: 2px;">
       <!-- Title Bar -->
       <div class="panel-title-bar w95-text">
         <span id="modal-title">Game Player</span>
         <span class="win-btns">
-          <button type="button" class="win-btn btn-close" onclick="closeModal()" aria-label="Close" style="cursor:pointer;">✕</button>
+          <button type="button" class="win-btn btn-close" id="modal-close" aria-label="Close" style="cursor:pointer;">✕</button>
         </span>
       </div>
       <!-- Viewport Container -->
@@ -171,6 +173,13 @@
   </div>
 
   <script>
+    // ===== CONFIG =====
+    const ICON_CANDIDATES = ['icon.png', 'icon.webp', 'icon.jpg', 'icon.svg', 'logo.png', 'app.png'];
+    // Global hub asset (external by design)
+    const FALLBACK_ICON = 'https://coltjbennett.github.io/games-hub/images/missing.png';
+
+
+    // ===== LOCAL GAME LIST =====
     const LOCAL_GAMES = [
       '1v1.lol',
       '2048',
@@ -410,150 +419,179 @@
       'zuma.swf'
     ];
 
-    const ICON_CANDIDATES = ['icon.png', 'icon.webp', 'icon.jpg', 'icon.svg', 'logo.png', 'app.png'];
-    const FALLBACK_ICON = 'https://coltjbennett.github.io/games-hub/images/missing.png'; 
-
-    let games = [];
-    let currentRenderedGames = [];
-
-    function loadGames() {
-      const grid = document.getElementById('grid');
-
-      if (!LOCAL_GAMES || LOCAL_GAMES.length === 0) {
-        grid.innerHTML = `<div class="status-container">No games found in local repository.</div>`;
-        return;
-      }
-
-      games = LOCAL_GAMES.map(itemName => {
-        const isSwf = itemName.toLowerCase().endsWith('.swf');
-        const baseName = isSwf ? itemName.replace(/\.swf$/i, '') : itemName;
-
-        return {
-          name: itemName,
-          baseName: baseName,
-          title: formatTitle(baseName),
-          path: isSwf ? itemName : `${itemName}/index.html`,
-          isSwf: isSwf
-        };
-      });
-
-      renderGrid(games);
+    // ===== HELPERS =====
+    // Encode each path segment (keeps "/" separators) so names like "pip!" or "fireboy&watergirl.swf" resolve safely.
+    function encodePath(p) {
+      return p.split('/').map(encodeURIComponent).join('/');
     }
 
-    function formatTitle(folderName) {
-      const nameOnly = folderName.includes('/') ? folderName.split('/').pop() : folderName;
-      return nameOnly
+    // Escape text for safe insertion into HTML text/attribute contexts.
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatTitle(name) {
+      return name
         .replace(/[-_]/g, ' ')
         .replace(/\b\w/g, char => char.toUpperCase());
     }
 
+    // ===== BUILD GAME OBJECTS =====
+    // Same structure as the original: SWF -> `${name}`, folder -> `${name}/index.html`
+    // (raw names, no encoding, local relative paths only)
+    const games = LOCAL_GAMES.map((entry, index) => {
+      const isSwf = entry.toLowerCase().endsWith('.swf');
+      const baseName = isSwf ? entry.replace(/\.swf$/i, '') : entry;
+
+      return {
+        id: index,
+        name: entry,
+        baseName: baseName,
+        title: formatTitle(baseName),
+        path: isSwf
+          ? `${entry}`
+          : `${entry}/index.html`,
+        isSwf: isSwf
+      };
+    });
+
+    // ===== RENDERING =====
+    const grid = document.getElementById('grid');
+    const countEl = document.getElementById('game-count');
+
     function renderGrid(gameList) {
-      currentRenderedGames = gameList;
-      const grid = document.getElementById('grid');
-      
+      countEl.textContent = `(${gameList.length} of ${games.length})`;
+
       if (gameList.length === 0) {
         grid.innerHTML = `<div class="status-container">No games matching your search.</div>`;
         return;
       }
 
-      grid.innerHTML = gameList.map((game, index) => {
-        // Direct rendering for SWF files - no icon searches or folder paths
-        if (game.isSwf) {
-          return `
-            <div class="project-card arcade-card" data-index="${index}">
-              <div class="card-image">
-                <img src="${FALLBACK_ICON}" alt="${game.title}" />
-              </div>
-              <div class="card-body">
-                <h3>${game.title}</h3>
-              </div>
-            </div>
-          `;
-        }
+      grid.innerHTML = gameList.map(game => {
+        const safeTitle = escapeHTML(game.title);
 
-        // Standard folder-based HTML5 games
+        // SWF: no icon search, go straight to the fallback icon.
+        // HTML folder: try local "<folder>/icon.png" first, then cascade via tryNextIcon.
+        const imgTag = game.isSwf
+          ? `<img src="${FALLBACK_ICON}" alt="${safeTitle}" loading="lazy" />`
+          : `<img src="${encodePath(game.baseName)}/${ICON_CANDIDATES[0]}"
+                  alt="${safeTitle}"
+                  loading="lazy"
+                  data-folder="${escapeHTML(encodePath(game.baseName))}"
+                  data-icon-index="0" />`;
+
         return `
-          <div class="project-card arcade-card" data-index="${index}">
-            <div class="card-image">
-              <img 
-                src="${game.baseName}/icon.png" 
-                alt="${game.title}"
-                onerror="tryNextIcon(this, '${game.baseName.replace(/'/g, "\\'")}', 1);"
-              />
-            </div>
+          <div class="project-card arcade-card" data-id="${game.id}" role="button" tabindex="0">
+            <div class="card-image">${imgTag}</div>
             <div class="card-body">
-              <h3>${game.title}</h3>
+              <h3>${safeTitle}</h3>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join('');
     }
 
-    function tryNextIcon(imgElement, folderName, index) {
-      if (index < ICON_CANDIDATES.length) {
-        imgElement.onerror = () => tryNextIcon(imgElement, folderName, index + 1);
-        imgElement.src = `${folderName}/${ICON_CANDIDATES[index]}`;
+    // Icon cascade for HTML folders (error events don't bubble, so use capture on the grid).
+    function tryNextIcon(img) {
+      const folder = img.dataset.folder;
+      const next = parseInt(img.dataset.iconIndex, 10) + 1;
+
+      if (next < ICON_CANDIDATES.length) {
+        img.dataset.iconIndex = next;
+        img.src = `${folder}/${ICON_CANDIDATES[next]}`;
       } else {
-        imgElement.onerror = null;
-        imgElement.src = FALLBACK_ICON;
+        // Out of candidates: stop looping and use the fallback.
+        delete img.dataset.folder;
+        img.src = FALLBACK_ICON;
       }
     }
 
-    // Click handling via dataset index lookup
-    document.getElementById('grid').addEventListener('click', (e) => {
+    grid.addEventListener('error', (e) => {
+      const img = e.target;
+      if (img.tagName === 'IMG' && img.dataset.folder) {
+        tryNextIcon(img);
+      }
+    }, true);
+
+    // ===== CARD CLICKS (delegated; no inline handlers, so quotes/ampersands can't break anything) =====
+    function handleCardActivate(e) {
       const card = e.target.closest('.arcade-card');
-      if (card && card.dataset.index !== undefined) {
-        const game = currentRenderedGames[parseInt(card.dataset.index, 10)];
-        if (game) {
-          openGame(game.path, game.isSwf, game.title);
-        }
+      if (!card) return;
+      const game = games[parseInt(card.dataset.id, 10)];
+      if (game) openGame(game);
+    }
+
+    grid.addEventListener('click', handleCardActivate);
+    grid.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleCardActivate(e);
       }
     });
 
+    // ===== SEARCH =====
     document.getElementById('search').addEventListener('input', (e) => {
-      const term = e.target.value.toLowerCase();
-      const filtered = games.filter(g => g.title.toLowerCase().includes(term) || g.name.toLowerCase().includes(term));
+      const term = e.target.value.trim().toLowerCase();
+      const filtered = games.filter(g =>
+        g.title.toLowerCase().includes(term) || g.name.toLowerCase().includes(term)
+      );
       renderGrid(filtered);
     });
 
-    function openGame(url, isSwf, title) {
-      const modal = document.getElementById('game-modal');
-      const container = document.getElementById('game-container');
-      
-      document.getElementById('modal-title').innerText = title + (isSwf ? ' - Flash Arcade' : ' - HTML Arcade');
+    // ===== MODAL =====
+    const modal = document.getElementById('game-modal');
+    const container = document.getElementById('game-container');
+
+    // Opens both HTML5 and Flash/SWF games inside the custom window modal
+    function openGame(game) {
+      // Update Title Bar
+      document.getElementById('modal-title').innerText = game.title + (game.isSwf ? ' - Flash Arcade' : ' - HTML Arcade');
+
+      // Clear previous content
       container.innerHTML = '';
-      
-      if (isSwf) {
+
+      if (game.isSwf) {
+        // Embed Ruffle Player for SWF files (identical to original)
         const ruffle = window.RufflePlayer.newest();
         const player = ruffle.createPlayer();
         player.style.width = '100%';
         player.style.height = '100%';
-        
+
         container.appendChild(player);
-        player.load(url);
+        player.load(game.path);
       } else {
+        // Embed iframe for HTML5 games
         const iframe = document.createElement('iframe');
-        iframe.src = url;
+        iframe.src = game.path;
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = 'none';
         iframe.allow = 'autoplay; fullscreen; keyboard';
-        
+
         container.appendChild(iframe);
       }
-      
+
+      // Display window modal
       modal.style.display = 'flex';
     }
 
+    // Close modal and unload game frame/sound
     function closeModal() {
-      const modal = document.getElementById('game-modal');
-      const container = document.getElementById('game-container');
-      
       modal.style.display = 'none';
-      container.innerHTML = ''; 
+      container.innerHTML = '';
     }
 
-    loadGames();
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.style.display !== 'none') closeModal();
+    });
+
+    // ===== INIT =====
+    renderGrid(games);
   </script>
 </body>
 </html>
