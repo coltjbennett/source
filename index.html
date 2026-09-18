@@ -15,7 +15,7 @@
   <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 
   <style>
-    /* ===== DISABLE CRT OVERLAYS & FILTERS (PRESERVES TILED BACKGROUND) ===== */
+    /* ===== DISABLE CRT OVERLAYS & FILTERS ===== */
     html::after {
       display: none !important;
       content: none !important;
@@ -34,7 +34,7 @@
       image-rendering: auto !important;
     }
 
-    /* ===== SUPPLEMENTARY STYLES FOR GAMES.HTML ===== */
+    /* ===== SUPPLEMENTARY STYLES ===== */
     .arcade-grid {
       display: grid;
       gap: 12px;
@@ -153,7 +153,7 @@
     </div>
   </div>
 
-  <!-- Unified Game Modal Window (Handles Flash & HTML5) -->
+  <!-- Unified Game Modal Window -->
   <div id="game-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
     <div class="panel" style="width: 95vw; height: 95vh; display: flex; flex-direction: column; padding: 2px;">
       <!-- Title Bar -->
@@ -457,18 +457,28 @@
       }
 
       grid.innerHTML = gameList.map((game, index) => {
-        const initialIcon = game.isSwf ? FALLBACK_ICON : `${game.baseName}/icon.png`;
-        const onErrorHandler = game.isSwf 
-          ? `this.onerror=null;this.src='${FALLBACK_ICON}';` 
-          : `tryNextIcon(this, '${game.baseName.replace(/'/g, "\\'")}', 1);`;
+        // Direct rendering for SWF files - no icon searches or folder paths
+        if (game.isSwf) {
+          return `
+            <div class="project-card arcade-card" data-index="${index}">
+              <div class="card-image">
+                <img src="${FALLBACK_ICON}" alt="${game.title}" />
+              </div>
+              <div class="card-body">
+                <h3>${game.title}</h3>
+              </div>
+            </div>
+          `;
+        }
 
+        // Standard folder-based HTML5 games
         return `
           <div class="project-card arcade-card" data-index="${index}">
             <div class="card-image">
               <img 
-                src="${initialIcon}" 
+                src="${game.baseName}/icon.png" 
                 alt="${game.title}"
-                onerror="${onErrorHandler}"
+                onerror="tryNextIcon(this, '${game.baseName.replace(/'/g, "\\'")}', 1);"
               />
             </div>
             <div class="card-body">
@@ -489,7 +499,7 @@
       }
     }
 
-    // Delegate click events to avoid inline JS string escaping issues
+    // Click handling via dataset index lookup
     document.getElementById('grid').addEventListener('click', (e) => {
       const card = e.target.closest('.arcade-card');
       if (card && card.dataset.index !== undefined) {
@@ -506,19 +516,14 @@
       renderGrid(filtered);
     });
 
-    // Opens both HTML5 and Flash/SWF games inside the custom window modal
     function openGame(url, isSwf, title) {
       const modal = document.getElementById('game-modal');
       const container = document.getElementById('game-container');
       
-      // Update Title Bar
       document.getElementById('modal-title').innerText = title + (isSwf ? ' - Flash Arcade' : ' - HTML Arcade');
-      
-      // Clear previous content
       container.innerHTML = '';
       
       if (isSwf) {
-        // Embed Ruffle Player for SWF files sitting in root
         const ruffle = window.RufflePlayer.newest();
         const player = ruffle.createPlayer();
         player.style.width = '100%';
@@ -527,7 +532,6 @@
         container.appendChild(player);
         player.load(url);
       } else {
-        // Embed iframe for HTML5 games in subfolders
         const iframe = document.createElement('iframe');
         iframe.src = url;
         iframe.style.width = '100%';
@@ -538,11 +542,9 @@
         container.appendChild(iframe);
       }
       
-      // Display window modal
       modal.style.display = 'flex';
     }
 
-    // Close Modal and unload game frame/sound
     function closeModal() {
       const modal = document.getElementById('game-modal');
       const container = document.getElementById('game-container');
