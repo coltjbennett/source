@@ -414,6 +414,7 @@
     const FALLBACK_ICON = 'https://coltjbennett.github.io/games-hub/images/missing.png'; 
 
     let games = [];
+    let currentRenderedGames = [];
 
     function loadGames() {
       const grid = document.getElementById('grid');
@@ -447,26 +448,35 @@
     }
 
     function renderGrid(gameList) {
+      currentRenderedGames = gameList;
       const grid = document.getElementById('grid');
+      
       if (gameList.length === 0) {
         grid.innerHTML = `<div class="status-container">No games matching your search.</div>`;
         return;
       }
 
-      grid.innerHTML = gameList.map((game) => `
-        <div class="project-card arcade-card" onclick="openGame('${game.path}', ${game.isSwf}, '${game.title.replace(/'/g, "\\'")}')">
-          <div class="card-image">
-            <img 
-              src="${game.baseName}/icon.png" 
-              alt="${game.title}"
-              onerror="tryNextIcon(this, '${game.baseName}', 1)"
-            />
+      grid.innerHTML = gameList.map((game, index) => {
+        const initialIcon = game.isSwf ? FALLBACK_ICON : `${game.baseName}/icon.png`;
+        const onErrorHandler = game.isSwf 
+          ? `this.onerror=null;this.src='${FALLBACK_ICON}';` 
+          : `tryNextIcon(this, '${game.baseName.replace(/'/g, "\\'")}', 1);`;
+
+        return `
+          <div class="project-card arcade-card" data-index="${index}">
+            <div class="card-image">
+              <img 
+                src="${initialIcon}" 
+                alt="${game.title}"
+                onerror="${onErrorHandler}"
+              />
+            </div>
+            <div class="card-body">
+              <h3>${game.title}</h3>
+            </div>
           </div>
-          <div class="card-body">
-            <h3>${game.title}</h3>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     function tryNextIcon(imgElement, folderName, index) {
@@ -478,6 +488,17 @@
         imgElement.src = FALLBACK_ICON;
       }
     }
+
+    // Delegate click events to avoid inline JS string escaping issues
+    document.getElementById('grid').addEventListener('click', (e) => {
+      const card = e.target.closest('.arcade-card');
+      if (card && card.dataset.index !== undefined) {
+        const game = currentRenderedGames[parseInt(card.dataset.index, 10)];
+        if (game) {
+          openGame(game.path, game.isSwf, game.title);
+        }
+      }
+    });
 
     document.getElementById('search').addEventListener('input', (e) => {
       const term = e.target.value.toLowerCase();
@@ -497,7 +518,7 @@
       container.innerHTML = '';
       
       if (isSwf) {
-        // Embed Ruffle Player for SWF files
+        // Embed Ruffle Player for SWF files sitting in root
         const ruffle = window.RufflePlayer.newest();
         const player = ruffle.createPlayer();
         player.style.width = '100%';
@@ -506,7 +527,7 @@
         container.appendChild(player);
         player.load(url);
       } else {
-        // Embed iframe for HTML5 games
+        // Embed iframe for HTML5 games in subfolders
         const iframe = document.createElement('iframe');
         iframe.src = url;
         iframe.style.width = '100%';
