@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000080" />
+  <title>Arcade Hub - Project Launcher</title>
+  <link rel="icon" href="https://coltjbennett.github.io/games-hub/images/icon.JPG">
+  <link rel="stylesheet" href="https://coltjbennett.github.io/games-hub/styles.css" />
+  
+  <!-- Preload Ruffle Globally -->
+  <script>
+    window.RufflePlayer = window.RufflePlayer || {};
+  </script>
+  <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+
+  <style>
+    /* ===== DISABLE CRT OVERLAYS & FILTERS (PRESERVES TILED BACKGROUND) ===== */
+    html::after {
+      display: none !important;
+      content: none !important;
+      background: none !important;
+    }
+
+    html, body, .page-shell, .panel, .panel-dark, .arcade-card, #game-modal, * {
+      filter: none !important;
+      backdrop-filter: none !important;
+      text-shadow: none !important;
+      animation: none !important;
+    }
+
+    img {
+      filter: none !important;
+      image-rendering: auto !important;
+    }
+
+    /* ===== SUPPLEMENTARY STYLES FOR GAMES.HTML ===== */
+    .arcade-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .arcade-card {
+      cursor: pointer;
+    }
+    
+    .arcade-card .card-image {
+      aspect-ratio: 1 / 1;
+      background: var(--win-bg);
+      border-bottom: 2px inset var(--win-border-dark);
+      padding: 6px; 
+    }
+
+    .arcade-card .card-image img {
+      object-fit: cover;
+      width: 100%;
+      height: 100%;
+      border: 2px inset var(--win-border-dark);
+      background: var(--win-blue);
+    }
+    
+    .arcade-card .card-body {
+      align-items: center;
+      justify-content: center;
+      padding: 8px 10px;
+    }
+
+    .arcade-card h3 {
+      text-align: center;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .status-container {
+      grid-column: 1 / -1;
+      padding: 40px;
+      text-align: center;
+      font-weight: bold;
+      color: var(--win-text-dark);
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-shell">
+    
+    <!-- Header -->
+    <header>
+      <div class="panel-dark">
+        <div class="panel-title-bar w95-text">
+          <span>ARCADE HUB</span>
+          <span class="win-btns">
+            <button type="button" class="win-btn btn-minimize" aria-label="Minimize">-</button>
+            <button type="button" class="win-btn btn-maximize" aria-label="Maximize" disabled>□</button>
+            <button type="button" class="win-btn btn-close" aria-label="Close" disabled>✕</button>
+          </span>
+        </div>
+        <div class="panel-body">
+          <div class="header-top-banner">GAME DIRECTORY</div>
+          <h1>ARCADE HUB</h1>
+          <p class="hero-copy">Browse, search, and play games directly from the repository.</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+      <div class="panel">
+        <div class="panel-title-bar w95-text">
+          <span>GAME LIBRARY</span>
+          <span class="win-btns">
+            <button type="button" class="win-btn btn-minimize" aria-label="Minimize">-</button>
+            <button type="button" class="win-btn btn-maximize" aria-label="Maximize" disabled>□</button>
+          </span>
+        </div>
+        <div class="panel-body">
+          
+          <!-- Search Toolbar -->
+          <div class="controls-row">
+            <p class="hint">Type to filter games below.</p>
+            <div class="toolbar">
+              <input type="text" id="search" class="search-input" placeholder="Search games..." style="width: 250px;">
+              <button id="refresh-btn" class="sort-btn w95-text" onclick="fetchGames(true)">Refresh API</button>
+            </div>
+          </div>
+
+          <!-- Game Grid -->
+          <div id="grid" class="arcade-grid">
+            <div class="status-container">Loading arcade library... please wait.</div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer>
+      <p>Powered by GitHub API</p>
+      <p class="footer-note w95-text">Best viewed with a monitor</p>
+    </footer>
+
+  </div>
+
+  <!-- Taskbar -->
+  <div class="taskbar">
+    <button type="button" class="taskbar-start" onclick="window.location.href='https://coltjbennett.github.io/games-hub/index.html'">
+      <img src="https://coltjbennett.github.io/games-hub/images/windows.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 4px;" onerror="this.src='images/missing.png';" />
+      Start
+    </button>
+    <div class="taskbar-spacer"></div>
+    <div class="taskbar-status">
+      <div class="taskbar-clock w95-text">Arcade Hub Active</div>
+    </div>
+  </div>
+
+  <!-- Unified Game Modal Window (Handles Flash & HTML5) -->
+  <div id="game-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="panel" style="width: 95vw; height: 95vh; display: flex; flex-direction: column; padding: 2px;">
+      <!-- Title Bar -->
+      <div class="panel-title-bar w95-text">
+        <span id="modal-title">Game Player</span>
+        <span class="win-btns">
+          <button type="button" class="win-btn btn-close" onclick="closeModal()" aria-label="Close" style="cursor:pointer;">✕</button>
+        </span>
+      </div>
+      <!-- Viewport Container -->
+      <div class="panel-body" style="flex: 1; padding: 0; display: flex; border: 2px inset var(--win-border-dark);">
+        <div id="game-container" style="flex: 1; width: 100%; height: 100%; background: #000;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const REPO_OWNER = 'coltjbennett';
+    const REPO_NAME = 'source';
+    
+    const ICON_CANDIDATES = ['icon.png', 'icon.webp', 'icon.jpg', 'icon.svg', 'logo.png', 'app.png'];
+    const FALLBACK_ICON = 'https://coltjbennett.github.io/games-hub/images/missing.png'; 
+
+    let games = [];
+
+    async function fetchGames(forceRefresh = false) {
+      const grid = document.getElementById('grid');
+      if (forceRefresh) {
+        grid.innerHTML = `<div class="status-container">Forcing API refresh... please wait.</div>`;
+      } else {
+        grid.innerHTML = `<div class="status-container">Loading arcade library... please wait.</div>`;
+      }
+      
+      try {
+        let data;
+        const cachedData = localStorage.getItem('arcade_games_cache');
+        const lastFetchDate = localStorage.getItem('arcade_games_cache_date');
+        const today = new Date().toDateString();
+        const needsDailyUpdate = lastFetchDate !== today;
+
+        if (cachedData && !forceRefresh && !needsDailyUpdate) {
+          data = JSON.parse(cachedData);
+        } else {
+          const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`);
+          
+          if (response.status === 403 || response.status === 429) {
+            if (cachedData) {
+              console.warn('API rate limit reached. Falling back to cached data.');
+              data = JSON.parse(cachedData);
+            } else {
+              throw new Error('GitHub API rate limit exceeded (60 requests per hour). No local cache available to load.');
+            }
+          } else if (!response.ok) {
+            throw new Error('Failed to fetch repo contents.');
+          } else {
+            data = await response.json();
+            localStorage.setItem('arcade_games_cache', JSON.stringify(data));
+            localStorage.setItem('arcade_games_cache_date', today);
+          }
+        }
+
+        const validItems = data.filter(item => {
+          if (item.name.startsWith('.')) return false;
+          return item.type === 'dir' || (item.type === 'file' && item.name.toLowerCase().endsWith('.swf'));
+        });
+
+        if (validItems.length === 0) {
+          grid.innerHTML = `<div class="status-container">No games or SWF files found in repository.</div>`;
+          return;
+        }
+
+        games = validItems.map(item => {
+          const isSwf = item.type === 'file' && item.name.toLowerCase().endsWith('.swf');
+          const baseName = isSwf ? item.name.replace(/\.swf$/i, '') : item.name;
+
+          return {
+            name: item.name,
+            baseName: baseName, 
+            title: formatTitle(baseName),
+            path: isSwf 
+              ? `https://coltjbennett.github.io/source/${item.name}` 
+              : `https://coltjbennett.github.io/source/${item.name}/index.html`,
+            isSwf: isSwf
+          };
+        });
+
+        renderGrid(games);
+      } catch (err) {
+        grid.innerHTML = `<div class="status-container">${err.message}</div>`;
+        console.error(err);
+      }
+    }
+
+    function formatTitle(folderName) {
+      return folderName
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
+    function renderGrid(gameList) {
+      const grid = document.getElementById('grid');
+      if (gameList.length === 0) {
+        grid.innerHTML = `<div class="status-container">No games matching your search.</div>`;
+        return;
+      }
+
+      grid.innerHTML = gameList.map((game) => `
+        <div class="project-card arcade-card" onclick="openGame('${game.path}', ${game.isSwf}, '${game.title.replace(/'/g, "\\'")}')">
+          <div class="card-image">
+            <img 
+              src="https://coltjbennett.github.io/source/${game.baseName}/icon.png" 
+              alt="${game.title}"
+              onerror="tryNextIcon(this, '${game.baseName}', 1)"
+            />
+          </div>
+          <div class="card-body">
+            <h3>${game.title}</h3>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function tryNextIcon(imgElement, folderName, index) {
+      if (index < ICON_CANDIDATES.length) {
+        imgElement.onerror = () => tryNextIcon(imgElement, folderName, index + 1);
+        imgElement.src = `https://coltjbennett.github.io/source/${folderName}/${ICON_CANDIDATES[index]}`;
+      } else {
+        imgElement.onerror = null;
+        imgElement.src = FALLBACK_ICON;
+      }
+    }
+
+    document.getElementById('search').addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      const filtered = games.filter(g => g.title.toLowerCase().includes(term) || g.name.toLowerCase().includes(term));
+      renderGrid(filtered);
+    });
+
+    // Opens both HTML5 and Flash/SWF games inside the custom window modal
+    function openGame(url, isSwf, title) {
+      const modal = document.getElementById('game-modal');
+      const container = document.getElementById('game-container');
+      
+      // Update Title Bar
+      document.getElementById('modal-title').innerText = title + (isSwf ? ' - Flash Arcade' : ' - HTML Arcade');
+      
+      // Clear previous content
+      container.innerHTML = '';
+      
+      if (isSwf) {
+        // Embed Ruffle Player for SWF files
+        const ruffle = window.RufflePlayer.newest();
+        const player = ruffle.createPlayer();
+        player.style.width = '100%';
+        player.style.height = '100%';
+        
+        container.appendChild(player);
+        player.load(url);
+      } else {
+        // Embed iframe for HTML5 games
+        const iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.allow = 'autoplay; fullscreen; keyboard';
+        
+        container.appendChild(iframe);
+      }
+      
+      // Display window modal
+      modal.style.display = 'flex';
+    }
+
+    // Close Modal and unload game frame/sound
+    function closeModal() {
+      const modal = document.getElementById('game-modal');
+      const container = document.getElementById('game-container');
+      
+      modal.style.display = 'none';
+      container.innerHTML = ''; 
+    }
+
+    fetchGames(false);
+  </script>
+</body>
+</html>
